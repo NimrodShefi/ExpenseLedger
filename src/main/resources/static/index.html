@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Expense Ledger</title>
+    <!-- Bootstrap CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="bg-light">
+    <div class="container my-5">
+      <h1 class="mb-4">Expense Ledger</h1>
+
+      <!-- Form to add/update spending -->
+      <div class="card mb-4 p-3">
+        <h3 id="form-title">Add Spending</h3>
+        <form id="spending-form">
+          <input type="hidden" id="spending-id" />
+          <div class="mb-3">
+            <label>Date</label>
+            <input type="date" id="date" class="form-control" required />
+          </div>
+          <div class="mb-3">
+            <label>Amount</label>
+            <input
+              type="number"
+              step="0.01"
+              id="amount"
+              class="form-control"
+              required
+            />
+          </div>
+          <div class="mb-3">
+            <label>Category</label>
+            <input type="text" id="category" class="form-control" required />
+          </div>
+          <div class="mb-3">
+            <label>Comment</label>
+            <input type="text" id="comment" class="form-control" />
+          </div>
+          <button type="submit" class="btn btn-primary" id="submit-button">
+            Add
+          </button>
+          <button type="button" class="btn btn-secondary" id="cancel-button">
+            Cancel
+          </button>
+        </form>
+      </div>
+
+      <!-- Table to list spendings -->
+      <table class="table table-striped table-bordered">
+        <thead class="table-dark">
+          <tr>
+            <th>Date</th>
+            <th>Amount</th>
+            <th>Category</th>
+            <th>Comment</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="spending-table-body">
+          <!-- Rows will be added dynamically -->
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+      // API base URL
+      const API_URL = "http://localhost:8080/api/spending";
+
+      // Load all spendings
+      async function loadSpendings() {
+        const res = await fetch(API_URL);
+        const data = await res.json();
+        const tbody = document.getElementById("spending-table-body");
+        tbody.innerHTML = "";
+        data.forEach((sp) => {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${sp.date}</td>
+            <td>${sp.amount}</td>
+            <td>${sp.category}</td>
+            <td>${sp.comment || ""}</td>
+            <td>
+                <button class="btn btn-sm btn-warning me-1" onclick="editSpending(${
+                  sp.id
+                })">Edit</button>
+                <button class="btn btn-sm btn-danger" onclick="deleteSpending(${
+                  sp.id
+                })">Delete</button>
+            </td>
+        `;
+          tbody.appendChild(row);
+        });
+      }
+
+      // Add or update spending
+      document
+        .getElementById("spending-form")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const id = document.getElementById("spending-id").value;
+          const spending = {
+            date: document.getElementById("date").value,
+            amount: parseFloat(document.getElementById("amount").value),
+            category: document.getElementById("category").value,
+            comment: document.getElementById("comment").value,
+          };
+
+          if (id) {
+            // Update
+            await fetch(`${API_URL}/${id}`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(spending),
+            });
+          } else {
+            // Create
+            await fetch(API_URL, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(spending),
+            });
+          }
+
+          resetForm();
+          loadSpendings();
+        });
+
+      // Edit spending
+      async function editSpending(id) {
+        const res = await fetch(`${API_URL}/${id}`);
+        const sp = await res.json();
+        document.getElementById("spending-id").value = sp.id;
+        document.getElementById("date").value = sp.date;
+        document.getElementById("amount").value = sp.amount;
+        document.getElementById("category").value = sp.category;
+        document.getElementById("comment").value = sp.comment || "";
+        document.getElementById("form-title").innerText = "Update Spending";
+        document.getElementById("submit-button").innerText = "Update";
+      }
+
+      // Delete spending
+      async function deleteSpending(id) {
+        if (confirm("Are you sure you want to delete this entry?")) {
+          await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+          loadSpendings();
+        }
+      }
+
+      // Cancel form
+      document.getElementById("cancel-button").addEventListener("click", () => {
+        resetForm();
+      });
+
+      // Reset form
+      function resetForm() {
+        document.getElementById("spending-id").value = "";
+        document.getElementById("date").value = "";
+        document.getElementById("amount").value = "";
+        document.getElementById("category").value = "";
+        document.getElementById("comment").value = "";
+        document.getElementById("form-title").innerText = "Add Spending";
+        document.getElementById("submit-button").innerText = "Add";
+      }
+
+      // Load spendings on page load
+      loadSpendings();
+    </script>
+  </body>
+</html>
