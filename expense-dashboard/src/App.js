@@ -32,7 +32,7 @@ function App() {
   const [form, setForm] = useState({
     date: "",
     amount: "",
-    description: "",
+    category: "",
     comment: "",
   });
   const [editingId, setEditingId] = useState(null);
@@ -67,7 +67,7 @@ function App() {
       } else {
         await axios.post(API_URL, form);
       }
-      setForm({ date: "", amount: "", description: "", comment: "" });
+      setForm({ date: "", amount: "", category: "", comment: "" });
       setEditingId(null);
       fetchSpendings();
     } catch (err) {
@@ -90,7 +90,7 @@ function App() {
     setForm({
       date: spending.date,
       amount: spending.amount,
-      description: spending.description,
+      category: spending.category,
       comment: spending.comment,
     });
     setEditingId(spending.id);
@@ -98,13 +98,15 @@ function App() {
 
   // Prepare chart data
   const monthlyData = spendings.reduce((acc, sp) => {
-    const month = new Date(sp.date).toLocaleString("default", { month: "short" });
+    const month = new Date(sp.date).toLocaleString("default", {
+      month: "short",
+    });
     acc[month] = (acc[month] || 0) + parseFloat(sp.amount);
     return acc;
   }, {});
 
   const categoryData = spendings.reduce((acc, sp) => {
-    const key = sp.description || "Other";
+    const key = sp.category || "Other";
     acc[key] = (acc[key] || 0) + parseFloat(sp.amount);
     return acc;
   }, {});
@@ -146,10 +148,10 @@ function App() {
             <input
               type="text"
               className="form-control"
-              name="description"
-              value={form.description}
+              name="category"
+              value={form.category}
               onChange={handleChange}
-              placeholder="Description"
+              placeholder="category"
               required
             />
           </div>
@@ -177,7 +179,7 @@ function App() {
           <tr>
             <th>Date</th>
             <th>Amount</th>
-            <th>Description</th>
+            <th>category</th>
             <th>Comment</th>
             <th>Actions</th>
           </tr>
@@ -187,7 +189,7 @@ function App() {
             <tr key={sp.id}>
               <td>{sp.date}</td>
               <td>£{sp.amount}</td>
-              <td>{sp.description}</td>
+              <td>{sp.category}</td>
               <td>{sp.comment}</td>
               <td>
                 <button
@@ -227,7 +229,7 @@ function App() {
         </div>
 
         <div className="col-md-6 mb-4">
-          <h5>Amount per Description</h5>
+          <h5>Amount per category</h5>
           <Pie
             data={{
               labels: Object.keys(categoryData),
